@@ -10,7 +10,7 @@ DISCONNECT_MESSAGE = "!DISCONNECT"
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
-server.settimeout(50)
+server.settimeout(10)
 #def handle_client(conn, addr):
 #    print(f"[NEW CONNECTION] {addr} connected.")
 #
@@ -44,10 +44,10 @@ def start():
 
         # Get the content of the file
         if filename == '/':
-            filename = 'test.html'
+            filename = '/test.html'
 
         try:
-            fin = open('test.html')
+            fin = open('/Users/arpitkaur/Desktop/Webserver'+filename)
             content = fin.read()
             fin.close()
 
@@ -55,15 +55,13 @@ def start():
             print(response)
             
         except FileNotFoundError:
-            response = 'HTTP/1.1 404 NOT FOUND\n\nFile Not Found\n'
+
+            response = 'HTTP/1.1 404 NOT FOUND\n\nFile Not Found'
             print (response)
         except timeout:
             print("Timeout")
 
-        except (socket.timeout, socket.gaierror) as error:
-        logger.debug('telnet error: ', error)
-        delta = None
-        
+       
         
         conn.sendall(response.encode())
         conn.close()
