@@ -47,7 +47,7 @@ def start():
             filename = '/test.html'
 
         try:
-            fin = open('/Users/arpitkaur/Desktop/Webserver'+filename)
+            fin = open('test.html')
             content = fin.read()
             fin.close()
 
