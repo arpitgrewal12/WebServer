@@ -61,10 +61,7 @@ def start():
         except timeout:
             print("Timeout")
 
-        except (socket.timeout, socket.gaierror) as error:
-        logger.debug('telnet error: ', error)
-        delta = None
-        
+       
         
         conn.sendall(response.encode())
         conn.close()
