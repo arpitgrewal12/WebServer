@@ -43,6 +43,8 @@ def start():
         if ready[0] == []: #Timeout
             response = 'HTTP/1.1 408 REQUEST TIME OUT'
             print(response)
+            server.sendall(response.encode())
+            server.close()
             break
         
         conn, addr = server.accept()
@@ -75,11 +77,6 @@ def start():
         
         conn.sendall(response.encode())
         conn.close()
-        
-        
-# def isUrlFormat(filename):
-#     print(theUrl
-        
         
 #        thread = threading.Thread(target=handle_client, args=(conn, addr))
 #        thread.start()
