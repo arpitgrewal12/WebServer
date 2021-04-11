@@ -2,8 +2,7 @@ from socket import *
 import threading
 import time
 import os
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
+import select
 
 HEADER = 64
 PORT = 5050
@@ -14,7 +13,7 @@ DISCONNECT_MESSAGE = "!DISCONNECT"
 
 server = socket(AF_INET, SOCK_STREAM)
 server.bind(ADDR)
-server.settimeout(50)
+server.settimeout(30)
 
 #def handle_client(conn, addr):
 #    print(f"[NEW CONNECTION] {addr} connected.")
@@ -35,27 +34,28 @@ server.settimeout(50)
 #
 
 def start():
+    TIMEOUT = 15.0
     server.listen()
-    startTime = time.time()
     print(f"[LISTENING] Server is listening on {SERVER}")
     while True:
+
+        ready = select.select([server], [], [], TIMEOUT)
+        if ready[0] == []: #Timeout
+            response = 'HTTP/1.1 408 REQUEST TIME OUT'
+            print(response)
+            break
+        
         conn, addr = server.accept()
-        
+
         request = conn.recv(1024).decode()
-        
-        # print(request)
+
+        print(request)
         
         # Parse HTTP headers
         headers = request.split('\n')
         filename = headers[0].split()[1]
 
-        validRequest = URLValidator()
-        try:
-            validRequest(SERVER + ":" + str(PORT) + "/" + filename)
-        except ValidationError as exception:
-            response ='HTTP/1.1 400 Bad Request\n\n'
-            print(response)
-            break
+        # validRequest(SERVER + ":" + str(PORT) + "/" + filename)
 
         # Get the content of the file
         if filename == '/test.html':
@@ -73,15 +73,12 @@ def start():
             response = 'HTTP/1.1 404 NOT FOUND\n\nFile Not Found'
             print (response)
         
-        except socket.timeout:
-            response = 'HTTP/1.1 408 REQUEST TIME OUT \n\n'
-            print (response)
-        
         conn.sendall(response.encode())
         conn.close()
         
         
-        
+# def isUrlFormat(filename):
+#     print(theUrl
         
         
 #        thread = threading.Thread(target=handle_client, args=(conn, addr))
