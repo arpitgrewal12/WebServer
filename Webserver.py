@@ -1,16 +1,21 @@
-import socket
+from socket import *
 import threading
 import time
+import os
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
+
 HEADER = 64
 PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
+SERVER = gethostbyname(gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server = socket(AF_INET, SOCK_STREAM)
 server.bind(ADDR)
-server.settimeout(10)
+server.settimeout(50)
+
 #def handle_client(conn, addr):
 #    print(f"[NEW CONNECTION] {addr} connected.")
 #
@@ -31,37 +36,46 @@ server.settimeout(10)
 
 def start():
     server.listen()
+    startTime = time.time()
     print(f"[LISTENING] Server is listening on {SERVER}")
     while True:
         conn, addr = server.accept()
         
         request = conn.recv(1024).decode()
-#        print(request)
+        
+        # print(request)
         
         # Parse HTTP headers
         headers = request.split('\n')
         filename = headers[0].split()[1]
 
+        validRequest = URLValidator()
+        try:
+            validRequest(SERVER + ":" + str(PORT) + "/" + filename)
+        except ValidationError as exception:
+            response ='HTTP/1.1 400 Bad Request\n\n'
+            print(response)
+            break
+
         # Get the content of the file
-        if filename == '/':
-            filename = '/test.html'
+        if filename == '/test.html':
+            filename = 'test.html'
 
         try:
-            fin = open('test.html')
+            fin = open(filename)
             content = fin.read()
             fin.close()
 
             response = 'HTTP/1.1 200 OK\n\n' + content
             print(response)
-            
-        except FileNotFoundError:
 
+        except FileNotFoundError:
             response = 'HTTP/1.1 404 NOT FOUND\n\nFile Not Found'
             print (response)
-        except timeout:
-            print("Timeout")
-
-       
+        
+        except socket.timeout:
+            response = 'HTTP/1.1 408 REQUEST TIME OUT \n\n'
+            print (response)
         
         conn.sendall(response.encode())
         conn.close()
