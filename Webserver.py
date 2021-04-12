@@ -38,16 +38,16 @@ def start():
     server.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
     while True:
+        conn, addr = server.accept()
 
         ready = select.select([server], [], [], TIMEOUT)
         if ready[0] == []: #Timeout
             response = 'HTTP/1.1 408 REQUEST TIME OUT'
             print(response)
-            server.sendall(response.encode())
-            server.close()
+            conn.sendall(response.encode())
+            print(response.encode())
+            conn.close()
             break
-        
-        conn, addr = server.accept()
 
         request = conn.recv(1024).decode()
 
