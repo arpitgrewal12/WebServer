@@ -11,8 +11,8 @@ clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 clientSocket.connect((SERVER, PORT))
 
-# Recieve user input from keyboard
-sentence = input('Input lowercase sentence:')
+# Receive user input from keyboard
+sentence = input('Input filename:')
 
 # puts client to sleep 
 # mimics 408 REQUEST TIME OUT 

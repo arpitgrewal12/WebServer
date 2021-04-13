@@ -24,7 +24,6 @@ def never_stop():
             raise TimeoutException()
         # response = 'HTTP/1.1 408 REQUEST TIME OUT'
         
-        
 def modification_date(filename):
     t = os.path.getmtime(filename)
     return datetime.datetime.fromtimestamp(t)
@@ -66,10 +65,11 @@ def start():
 
         request = conn.recv(1024).decode()
 
+        # Get the content of the file
         headers = request.split('\n')
+        print(headers)
         file = headers[0].split()[1]
         method = headers[0].split()[0]
-        # Get the content of the file
 
         if method != "GET":
             response = "HTTP/1.1 400 Bad Request\r\n\r\n"
@@ -111,12 +111,9 @@ def start():
             response = 'HTTP/1.1 404 NOT FOUND\n\nFile Not Found'
             print (response)
 
-    
         conn.sendall(response.encode())
     conn.close()
     server.close()
-        
-
 
 print("[STARTING] server is starting...")
 start()
