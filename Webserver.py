@@ -2,24 +2,30 @@ import socket
 import threading
 import time
 import select
-from requests.exceptions import HTTPError
-import requests
 import os
 import datetime
 import os.path
-import stat
-from urllib.request import urlopen, URLError, urlretrieve
-
+#import stat
 HEADER = 64
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
+x= None
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
+def never_stop():
+    time_started = time.time()
+    X = 2
+    while True:
+        if time.time() > time_started + X:
+            raise TimeoutException()
+        # response = 'HTTP/1.1 408 REQUEST TIME OUT'
+        
+        
 def modification_date(filename):
     t = os.path.getmtime(filename)
     return datetime.datetime.fromtimestamp(t)
@@ -32,81 +38,90 @@ def created_date(filename):
 def last_accessed(filename):
     t= os.path.getatime(filename)
     return datetime.datetime.fromtimestamp(t)
-    
 
 def start():
+    x=  None
     TIMEOUT=15.0
     server.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
     
-    
     while True:
         
-        ready = select.select([server], [], [], TIMEOUT)
+        # ready = select.select([server], [], [], TIMEOUT)
+        # print(ready[0])
+        # if ready[0] == []: #Timeout
+        #     response = 'HTTP/1.1 408 REQUEST TIME OUT'
+        #     print(response)
+        #     server.sendall(response.encode())
+        #     break
+            
+        conn, addr = server.accept()
+
+        ready = select.select([conn], [], [], TIMEOUT)
+        # print(ready[0])
         if ready[0] == []: #Timeout
             response = 'HTTP/1.1 408 REQUEST TIME OUT'
             print(response)
-            server.sendall(response.encode())
-            server.close()
+            print(response.encode())
+            conn.sendall(response.encode())
             break
-            
-        conn, addr = server.accept()
-        print(conn)
-        
-        
+
         request = conn.recv(1024).decode()
-#       print(request)
-        conn.settimeout(20)
-        # Parse HTTP headers
+
         headers = request.split('\n')
-        file= headers[0].split()[1]
-        print(file)
+        file = headers[0].split()[1]
+        method = headers[0].split()[0]
         # Get the content of the file
-        if file == '/':
+      
+        if method != "GET":
+            response = "HTTP/1.1 400 Bad Request\r\n\r\n"
+            conn.send(bytes(response, encoding='utf8'))
+            print(response)
+            break
+
+        if (file == '/'  or file == '/test.html'):
             file = 'test.html'
             print(file)
         try:
-#            file='/Users/arpitkaur/Desktop/Webserver'+filename
             f = open(file)
             content = f.read()
+            t1 = threading.Thread(target=never_stop, args=(2,))
             f.close()
-           
-    
+   
+            
             print("Last modified: " ,modification_date(file))
             print("Date created:",created_date(file))
             print("Last access Time:", last_accessed(file))
-            
+                       
             last_modified=modification_date(file)
             date_created=created_date(file)
             accessed=last_accessed(file)
-           
             
-            if (last_modified > accessed):
-                response = 'HTTP/1.1 200 OK\n\n' + content
-                print(response)
+            if request.__contains__('<body>') or request.__contains__('</body>'):
+                return 'HTTP/1.1 400 BAD REQUEST\n\n'
+            
+            if(x):
+                print("x:",x)
+                if(last_modified < x):
+                    response = 'HTTP/1.1 304 NOT MODIFIED \n\n' + content
+                    print(response)
                 
             else:
-                response = 'HTTP/1.1 304 NOT MODIFIED\n\n' + content
+                x=int(round(time.time()))
+                print("x:",x)
+                response = 'HTTP/1.1 200 OK \n\n' + content
                 print(response)
-
+            
         except FileNotFoundError:
-
             response = 'HTTP/1.1 404 NOT FOUND\n\nFile Not Found'
-            print(response)
+            print (response)
 
-        
-        if response.encode()=='GET / HTTP/1.1\r\n\r\n':     # HERE WE HAVE NO HEADER AND HTTP 1.1 REQUIRES A Host HEADER
-            response='HTTP/1.1 400 BAD REQUEST\n\nBad Request'
     
-    
-        print(response.encode())
-        
         conn.sendall(response.encode())
+    conn.close()
+    server.close()
         
-        conn.close()
 
 
 print("[STARTING] server is starting...")
 start()
-
-
