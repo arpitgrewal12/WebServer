@@ -22,7 +22,7 @@ def never_stop():
     while True:
         if time.time() > time_started + X:
             raise TimeoutException()
-        response = 'HTTP/1.1 408 REQUEST TIME OUT'
+        # response = 'HTTP/1.1 408 REQUEST TIME OUT'
         
         
 def modification_date(filename):
@@ -37,8 +37,6 @@ def created_date(filename):
 def last_accessed(filename):
     t= os.path.getatime(filename)
     return datetime.datetime.fromtimestamp(t)
-
-
 
 def start():
     TIMEOUT=15.0
@@ -57,10 +55,8 @@ def start():
             
         conn, addr = server.accept()
 
-        request = conn.recv(1024).decode()
-#        print(request)
-        ready = select.select([server], [], [], TIMEOUT)
-        print(ready[0])
+        ready = select.select([conn], [], [], TIMEOUT)
+        # print(ready[0])
         if ready[0] == []: #Timeout
             response = 'HTTP/1.1 408 REQUEST TIME OUT'
             print(response)
@@ -68,10 +64,19 @@ def start():
             conn.sendall(response.encode())
             break
 
+        request = conn.recv(1024).decode()
+
         headers = request.split('\n')
         file = headers[0].split()[1]
         method = headers[0].split()[0]
         # Get the content of the file
+
+        if method != "GET":
+            response = "HTTP/1.1 400 Bad Request\r\n\r\n"
+            conn.send(bytes(response, encoding='utf8'))
+            print(response)
+            break
+
         if (file == '/'  or file == '/test.html'):
             file = 'test.html'
             print(file)
@@ -90,13 +95,8 @@ def start():
             date_created=created_date(file)
             accessed=last_accessed(file)
             
-            if method != "GET":
-                conn.send(bytes('HTTP/1.1 400 Bad Request\r\n\r\n', encoding='utf8'))
-            
             if request.__contains__('<body>') or request.__contains__('</body>'):
                 return 'HTTP/1.1 400 BAD REQUEST\n\n'
-            
-            
             
             if(accessed):
                 if(last_modified < accessed):

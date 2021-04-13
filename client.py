@@ -16,14 +16,18 @@ sentence = input('Input lowercase sentence:')
 
 # puts client to sleep 
 # mimics 408 REQUEST TIME OUT 
-# remove/comment out when testing other codes
-time.sleep(16)
+# remove when testing other codes
+# time.sleep(16)
 
 clientSocket.send(sentence.encode())
 
-modifiedSentence = clientSocket.recv(1024)
+try:
+    modifiedSentence = clientSocket.recv(1024)
+    print ('From Server:', modifiedSentence.decode())
 
-print ('From Server:', modifiedSentence.decode())
+except ConnectionAbortedError:
+    response = 'From Server: HTTP/1.1 408 REQUEST TIME OUT \n Connection: close'
+    print(response)
 
 # Close the socket
 clientSocket.close()
