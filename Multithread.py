@@ -44,22 +44,14 @@ def last_accessed(filename):
 x= None
 def handle_client(conn, addr):
     
-    TIMEOUT = 20.0
+    TIMEOUT = 60.0
     print(f"[NEW CONNECTION] {addr} connected.")
 
     connected = True
     while connected:
         print('The message got from client socket:', conn)
         
-        ready = select.select([conn], [], [], TIMEOUT)
         
-        if ready[0] == []: #Timeout
-            response = 'HTTP/1.1 408 REQUEST TIME OUT'
-            print(response)
-            print(response.encode())
-            conn.sendall(response.encode())
-            break
-
         request = conn.recv(1024).decode()
     
 
@@ -77,10 +69,19 @@ def handle_client(conn, addr):
             response = "HTTP/1.1 400 Bad Request\r\n\r\n"
             conn.send(bytes(response, encoding='utf8'))
             print(response)
+            conn.close()
             break
 #            print(file)
         try:
              #            file='/Users/arpitkaur/Desktop/Webserver'+filename
+            ready = select.select([conn], [], [], TIMEOUT)
+            print(ready)
+            if ready[0] == []: #Timeout
+                response = 'HTTP/1.1 408 REQUEST TIME OUT'
+                print(response)
+
+                break
+
             f = open(file)
             content = f.read()
             t1 = threading.Thread(target=never_stop, args=(2,))
@@ -97,6 +98,7 @@ def handle_client(conn, addr):
     
             if request.__contains__('<body>') or request.__contains__('</body>'):
                 return 'HTTP/1.1 400 BAD REQUEST\n\n'
+                conn.close()
             
             
             global x
@@ -105,19 +107,24 @@ def handle_client(conn, addr):
                 if(last_modified < x):
                     response = 'HTTP/1.1 304 NOT MODIFIED \n\n' + content
                     print(response)
+                    conn.send(bytes(response,encoding=FORMAT))
+                    conn.send(bytes('304 Not Modified', encoding=FORMAT))
+                    conn.close()
                             
             else:
                 x=int(round(time.time()))
             #   print("x:",x)
                 response = 'HTTP/1.1 200 OK \n\n' + content
                 print(response)
+                conn.send(bytes(response,encoding=FORMAT))
+                conn.close()
 
         except FileNotFoundError:
             response = 'HTTP/1.1 404 NOT FOUND\n\nFile Not Found'
             print(response)
+            conn.send(bytes(response,encoding=FORMAT))
+            conn.close()
         
-        conn.sendall(response.encode())
-    conn.close()
 
 #        print(response.encode())
 #
