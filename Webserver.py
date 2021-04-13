@@ -47,18 +47,26 @@ def start():
 
     while True:
         
+        # ready = select.select([server], [], [], TIMEOUT)
+        # print(ready[0])
+        # if ready[0] == []: #Timeout
+        #     response = 'HTTP/1.1 408 REQUEST TIME OUT'
+        #     print(response)
+        #     server.sendall(response.encode())
+        #     break
+            
+        conn, addr = server.accept()
+
+        request = conn.recv(1024).decode()
+#        print(request)
         ready = select.select([server], [], [], TIMEOUT)
         print(ready[0])
         if ready[0] == []: #Timeout
             response = 'HTTP/1.1 408 REQUEST TIME OUT'
             print(response)
+            print(response.encode())
             conn.sendall(response.encode())
             break
-            
-        conn, addr = server.accept()
-        request = conn.recv(1024).decode()
-#        print(request)
-        
 
         headers = request.split('\n')
         file = headers[0].split()[1]
